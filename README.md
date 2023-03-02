@@ -12,9 +12,9 @@ This is a Golang application that provides a shopping platform for customers, se
 
 
 ### There are 3 user types:
-**Customer:** Can purchase products and view their order history.
-**Seller:** The above plus the ability to list and manage products.
-**Administrator:** All the above plus manage user accounts and orders.
+- **Customer:** Can purchase products and view their order history.
+- **Seller:** The above plus the ability to list and manage products.
+- **Administrator:** All the above plus manage user accounts and orders.
 
 ---
 
