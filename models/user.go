@@ -12,5 +12,5 @@ type User struct {
 	Balance   uint   `gorm:"not null" json:"balance"`
 	Address   string `gorm:"not null" json:"address"`
 	Phone     string `gorm:"not null" json:"phone"`
-	UserType  string `gorm:"not null" json:"user_type"`
+	UserType  string `gorm:"not null" json:"usertype"`
 }

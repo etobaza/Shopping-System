@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/jinzhu/gorm"
 	"net/http"
 	"shopping-system/middlewares"
@@ -14,15 +13,16 @@ type UserController struct {
 }
 
 func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
-	var newUser models.User
-	if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
-		utils.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	email := r.FormValue("email")
+	firstName := r.FormValue("firstname")
+	lastName := r.FormValue("lastname")
+	address := r.FormValue("address")
+	phone := r.FormValue("phone")
 
 	// Check if username is available
-	if available, err := middlewares.UsernameIsAvailable(newUser.Username, uc.DB); err != nil {
+	if available, err := middlewares.UsernameIsAvailable(username, uc.DB); err != nil {
 		utils.Error(w, "Failed to check username availability", http.StatusInternalServerError)
 		return
 	} else if !available {
@@ -31,14 +31,14 @@ func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the password
-	hashedPassword, err := middlewares.HashPassword(newUser.Password)
+	hashedPassword, err := middlewares.HashPassword(password)
 	if err != nil {
 		utils.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
-	newUser.Password = hashedPassword
-	newUser.Balance = 0
-	newUser.UserType = "customer"
+
+	// Create user
+	newUser := middlewares.ManufactureUser(username, hashedPassword, email, firstName, lastName, address, phone)
 
 	if err := uc.DB.Create(&newUser).Error; err != nil {
 		utils.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -48,22 +48,25 @@ func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		utils.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
 	// Check if password is correct
-	if correct, err := middlewares.PasswordIsCorrect(user.Username, user.Password, uc.DB); err != nil {
+	if correct, err := middlewares.PasswordIsCorrect(username, password, uc.DB); err != nil {
 		utils.Error(w, "Failed to check password", http.StatusInternalServerError)
 		return
 	} else if !correct {
 		utils.Error(w, "Incorrect password", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, "http://localhost:8080/login", http.StatusSeeOther)
+
+	// Retrieve the user
+	var user models.User
+	if err := uc.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
+		return
+	}
+
 	utils.Respond(w, user, http.StatusOK)
 }
 
