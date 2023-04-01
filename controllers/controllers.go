@@ -1,11 +1,13 @@
 package controllers
 
 import (
-	"github.com/jinzhu/gorm"
+	"encoding/json"
 	"net/http"
 	"shopping-system/middlewares"
 	"shopping-system/models"
 	"shopping-system/utils"
+
+	"github.com/jinzhu/gorm"
 )
 
 type UserController struct {
@@ -13,16 +15,21 @@ type UserController struct {
 }
 
 func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	email := r.FormValue("email")
-	firstName := r.FormValue("firstname")
-	lastName := r.FormValue("lastname")
-	address := r.FormValue("address")
-	phone := r.FormValue("phone")
-
+	var reqData struct {
+		Username  string `json:"username"`
+		Password  string `json:"password"`
+		Email     string `json:"email"`
+		FirstName string `json:"firstname"`
+		LastName  string `json:"lastname"`
+		Address   string `json:"address"`
+		Phone     string `json:"phone"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		utils.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
 	// Check if username is available
-	if available, err := middlewares.UsernameIsAvailable(username, uc.DB); err != nil {
+	if available, err := middlewares.UsernameIsAvailable(reqData.Username, uc.DB); err != nil {
 		utils.Error(w, "Failed to check username availability", http.StatusInternalServerError)
 		return
 	} else if !available {
@@ -31,14 +38,14 @@ func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the password
-	hashedPassword, err := middlewares.HashPassword(password)
+	hashedPassword, err := middlewares.HashPassword(reqData.Password)
 	if err != nil {
 		utils.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
 	// Create user
-	newUser := middlewares.ManufactureUser(username, hashedPassword, email, firstName, lastName, address, phone)
+	newUser := middlewares.ManufactureUser(reqData.Username, hashedPassword, reqData.Email, reqData.FirstName, reqData.LastName, reqData.Address, reqData.Phone)
 
 	if err := uc.DB.Create(&newUser).Error; err != nil {
 		utils.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -48,11 +55,16 @@ func (uc *UserController) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
+	var reqData struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		utils.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
 	// Check if password is correct
-	if correct, err := middlewares.PasswordIsCorrect(username, password, uc.DB); err != nil {
+	if correct, err := middlewares.PasswordIsCorrect(reqData.Username, reqData.Password, uc.DB); err != nil {
 		utils.Error(w, "Failed to check password", http.StatusInternalServerError)
 		return
 	} else if !correct {
@@ -62,18 +74,10 @@ func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve the user
 	var user models.User
-	if err := uc.DB.Where("username = ?", username).First(&user).Error; err != nil {
+	if err := uc.DB.Where("username = ?", reqData.Username).First(&user).Error; err != nil {
 		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
 		return
 	}
 
 	utils.Respond(w, user, http.StatusOK)
-}
-
-func (uc *UserController) GetRegister(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./views/pages/registration.html")
-}
-
-func (uc *UserController) GetLogin(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "./views/pages/login.html")
 }
