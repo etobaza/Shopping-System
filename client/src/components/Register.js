@@ -11,6 +11,7 @@ const Register = () => {
     const [lastName, setLastName] = useState("");
     const [address, setAddress] = useState("");
     const [phone, setPhone] = useState("");
+    const [usertype, setUsertype] = useState("customer");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,6 +23,7 @@ const Register = () => {
             lastname: lastName,
             address,
             phone,
+            usertype,
         };
 
         try {
@@ -67,6 +69,19 @@ const Register = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
+                <br />
+
+                <label htmlFor="usertype">User Type:</label>
+                <select
+                    id="usertype"
+                    name="usertype"
+                    required
+                    value={usertype}
+                    onChange={(e) => setUsertype(e.target.value)}
+                >
+                    <option value="customer">Customer</option>
+                    <option value="seller">Seller</option>
+                </select>
                 <br />
 
                 <label htmlFor="firstname">First Name:</label>

@@ -7,9 +7,11 @@ import (
 	"shopping-system/controllers"
 )
 
-func SetupRoutes(r *mux.Router, uc *controllers.UserController) {
-	r.HandleFunc("/register", uc.Register).Methods("POST")
-	r.HandleFunc("/login", uc.Login).Methods("POST")
+func SetupRoutes(r *mux.Router) {
+	r.HandleFunc("/register", controllers.Register).Methods("POST")
+	r.HandleFunc("/login", controllers.Login).Methods("POST")
+	r.HandleFunc("/logout", controllers.Logout).Methods("POST")
+	r.HandleFunc("/home", controllers.Home).Methods("GET")
 
 	buildDir := "./client/build/"
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(filepath.Join(buildDir, "static")))))

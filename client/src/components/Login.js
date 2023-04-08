@@ -1,9 +1,12 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import userService from "../services/user";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -12,13 +15,17 @@ const Login = () => {
             password,
         };
 
-        try {
-            const loggedInUser = await userService.login(credentials);
-            console.log("User logged in:", loggedInUser);
-        } catch (error) {
-            console.error("Error logging in user:", error);
+        const result = await userService.login(credentials);
+        if (result.success) {
+            console.log("User logged in:", result.data);
+            navigate("/home");
+        } else {
+            console.error("Error logging in user:", result.message);
         }
+
+
     };
+
 
     return (
         <div>
