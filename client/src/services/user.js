@@ -75,4 +75,7 @@ export const handleLogout = async () => {
 export default {
     register,
     login,
+    handleLogout,
+    fetchUserData,
+    fetchCategories,
 };

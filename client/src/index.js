@@ -12,10 +12,8 @@ export default function App() {
             <Routes>
                 <Route path="register" element={<Register />} />
                 <Route path="login" element={<Login />} />
-                <Route path="/" element={<Layout />}>
-                    <Route path="home" element={<Home />} />
-                    <Route path="*" element={<NoPage />} />
-                </Route>
+                <Route path="home" element={<Home />} />
+                <Route path="*" element={<NoPage />} />
             </Routes>
         </BrowserRouter>
     );
