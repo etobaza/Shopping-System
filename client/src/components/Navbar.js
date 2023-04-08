@@ -1,9 +1,16 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ username, balance, onLogout }) => {
-    const handleLogout = () => {
-        if (onLogout) {
-            onLogout();
+    const navigate = useNavigate();
+    const handleLogout = async () => {
+        try {
+            const success = await onLogout();
+            if (success) {
+                navigate('/login', { replace: true });
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
 

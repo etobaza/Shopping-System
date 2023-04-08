@@ -10,9 +10,9 @@ export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="register" element={<Register />} />
+                <Route path="login" element={<Login />} />
                 <Route path="/" element={<Layout />}>
-                    <Route path="register" element={<Register />} />
-                    <Route path="login" element={<Login />} />
                     <Route path="home" element={<Home />} />
                     <Route path="*" element={<NoPage />} />
                 </Route>

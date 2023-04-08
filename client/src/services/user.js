@@ -46,6 +46,31 @@ const login = async (credentials) => {
     }
 };
 
+export const fetchUserData = async () => {
+    const response = await fetch('/user-data');
+    const data = await response.json();
+    return data;
+};
+
+export const fetchCategories = async () => {
+    const response = await fetch('/categories');
+    const data = await response.json();
+    return data;
+};
+
+export const handleLogout = async () => {
+    try {
+        const response = await fetch('/logout', { method: 'POST' });
+        if (!response.ok) {
+            throw new Error('Failed to logout');
+        }
+        return true;
+    } catch (error) {
+        console.error(error);
+        return false;
+    }
+};
+
 
 export default {
     register,
