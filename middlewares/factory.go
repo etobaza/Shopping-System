@@ -4,17 +4,13 @@ import "shopping-system/models"
 
 func ManufactureUser(username string, password string, email string, firstName string, lastName string, address string, phone string, usertype string) models.User {
 	var user models.User
-	AssignFieldsUser(&user, username, password, email, firstName, lastName, address, phone, usertype)
+	user.Username = username
+	user.Password = password
+	user.Email = email
+	user.FirstName = firstName
+	user.LastName = lastName
+	user.Address = address
+	user.Phone = phone
+	user.UserType = usertype
 	return user
-}
-
-func AssignFieldsUser(user *models.User, Username string, Password string, Email string, FirstName string, LastName string, Address string, Phone string, UserType string) {
-	user.Username = Username
-	user.Password = Password
-	user.Email = Email
-	user.FirstName = FirstName
-	user.LastName = LastName
-	user.Address = Address
-	user.Phone = Phone
-	user.UserType = UserType
 }

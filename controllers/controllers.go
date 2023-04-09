@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 	"shopping-system/config"
@@ -46,7 +46,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// Create user
 	newUser := middlewares.ManufactureUser(reqData.Username, hashedPassword, reqData.Email, reqData.FirstName, reqData.LastName, reqData.Address, reqData.Phone, reqData.UserType)
 
-	if err := config.DB.Create(&newUser).Error; err != nil {
+	if addErr := config.DB.Create(&newUser).Error; addErr != nil {
 		utils.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
@@ -59,15 +59,18 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		log.Printf("Error decoding request data: %v\n", err)
 		utils.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
+
 	// Check if password is correct
 	if correct, err := middlewares.PasswordIsCorrect(reqData.Username, reqData.Password); err != nil {
-		fmt.Println(err)
+		log.Printf("Error checking password: %v\n", err)
 		utils.Error(w, "Failed to check password", http.StatusInternalServerError)
 		return
 	} else if !correct {
+		log.Println("Incorrect password")
 		utils.Error(w, "Incorrect password", http.StatusBadRequest)
 		return
 	}
@@ -75,24 +78,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the user
 	var user models.User
 	if err := config.DB.Where("username = ?", reqData.Username).First(&user).Error; err != nil {
+		log.Printf("Error retrieving user: %v\n", err)
 		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
 		return
 	}
 
-	// Generate a token for the user
 	token, err := utils.GenerateToken(&user)
 	if err != nil {
+		log.Printf("Error generating token: %v\n", err)
 		utils.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a cookie with the JWT token
 	cookie := utils.CreateCookie(token)
-
-	// Set the cookie in the response
 	http.SetCookie(w, cookie)
 
-	// Respond with the user and token
 	response := struct {
 		models.User
 		Token string `json:"token"`
@@ -101,10 +101,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Token: token,
 	}
 	utils.Respond(w, response, http.StatusOK)
+
+	log.Println("Login successful")
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	// Delete the HttpOnly cookie that contains the JWT token by setting the cookie's expiration time to a past date.
 	cookie := &http.Cookie{
 		Name:     "jwtToken",
 		Value:    "",
@@ -119,14 +120,23 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	// Validate the token
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
 	isValid, err := middlewares.ValidateTokenFromRequest(r)
 	if !isValid {
 		utils.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	// If the token is valid, serve the file
 	buildDir := "./client/build/"
 	http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+}
+
+func GetUsers(w http.ResponseWriter, r *http.Request) {
+	var users []models.User
+	if err := config.DB.Find(&users).Error; err != nil {
+		utils.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
+		return
+	}
+	utils.Respond(w, users, http.StatusOK)
 }

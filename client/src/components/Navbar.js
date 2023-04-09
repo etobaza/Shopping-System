@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchUserData, handleLogout as logoutUser } from '../services/user';
+import { fetchUsers, handleLogout as logoutUser } from '../services/user';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -9,7 +9,7 @@ const Navbar = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await fetchUserData();
+                const data = await fetchUsers();
                 setUserData(data);
             } catch (error) {
                 console.error(error);

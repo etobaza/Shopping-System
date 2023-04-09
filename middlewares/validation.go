@@ -3,6 +3,7 @@ package middlewares
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"log"
 	"net/http"
 	"shopping-system/config"
 	"shopping-system/models"
@@ -23,10 +24,13 @@ func UsernameIsAvailable(username string) (bool, error) {
 
 func PasswordIsCorrect(username, password string) (bool, error) {
 	var user models.User
+	print("username: " + username + "\n")
 	if err := config.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
+			log.Printf("[PIC] Error retrieving record: %v\n", err)
 			return false, nil
 		} else {
+			log.Printf("[PIC] Some other issue: %v\n", err)
 			return false, err
 		}
 	}

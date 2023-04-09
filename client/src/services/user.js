@@ -1,7 +1,4 @@
-import { useNavigate } from "react-router-dom";
-import {useEffect} from "react";
-
-const API_BASE_URL = "http://localhost:8080"; // Replace with your Golang server URL
+import {API_BASE_URL} from "../api/config";
 
 const register = async (userData) => {
     try {
@@ -46,16 +43,40 @@ const login = async (credentials) => {
     }
 };
 
-export const fetchUserData = async () => {
-    const response = await fetch('/user-data');
-    const data = await response.json();
-    return data;
+export const fetchUsers = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users`);
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
 };
 
+export const deleteUser = async (id) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error('Error deleting user');
+        }
+    } catch (error) {
+        console.error('Error deleting user:', error);
+    }
+};
+
+
 export const fetchCategories = async () => {
-    const response = await fetch('/categories');
-    const data = await response.json();
-    return data;
+    try {
+        const response = await fetch(`${API_BASE_URL}/categories`);
+        const data = await response.json();
+        return data;
+    }
+    catch (error) {
+        console.error('Error fetching categories:', error);
+    }
 };
 
 export const handleLogout = async () => {
@@ -76,6 +97,7 @@ export default {
     register,
     login,
     handleLogout,
-    fetchUserData,
+    fetchUsers,
+    deleteUser,
     fetchCategories,
 };
