@@ -1,24 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchUsers, handleLogout as logoutUser } from '../services/user';
+import { fetchUser, handleLogout as logoutUser } from "../services/user";
 
-const Navbar = () => {
+function LoggedInNavbar({ firstname, balance, onLogout }) {
+    return (
+        <nav>
+            <div className="logo">Shoppe</div>
+            <input type="text" placeholder="Search..." />
+            <div>
+                Hello, {firstname}! Your balance is ${balance.toFixed(2)}
+            </div>
+            <button onClick={onLogout}>Logout</button>
+        </nav>
+    );
+}
+
+function UnloggedInNavbar() {
     const navigate = useNavigate();
-    const [userData, setUserData] = useState(null);
+
+    const handleLoginClick = () => {
+        navigate('/login');
+    };
+
+    return (
+        <nav>
+            <div className="logo">Shoppe</div>
+            <input type="text" placeholder="Search..." />
+            <button onClick={handleLoginClick}>Login</button>
+        </nav>
+    );
+}
+
+function Navbar() {
+    const [firstname, setFirstName] = useState(null);
+    const [balance, setBalance] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await fetchUsers();
-                setUserData(data);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        fetchData().catch((error) => {
-            console.error('Error fetching user data:', error);
-        });
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            fetchUser(userId).then((data) => {
+                setFirstName(data.firstname);
+                setBalance(data.balance);
+            });
+        }
     }, []);
 
     const handleLogout = async () => {
@@ -33,18 +58,18 @@ const Navbar = () => {
     };
 
     return (
-        <nav>
-            <div className="logo">Shoppie</div>
-            <input type="text" placeholder="Search..." />
-            {userData && (
-                <div className="user-info">
-                    <span>{userData.username}</span>
-                    <span>Balance: {userData.balance}</span>
-                </div>
+        <>
+            {firstname ? (
+                <LoggedInNavbar
+                    firstname={firstname}
+                    balance={balance}
+                    onLogout={handleLogout}
+                />
+            ) : (
+                <UnloggedInNavbar />
             )}
-            <button onClick={handleLogout}>Logout</button>
-        </nav>
+        </>
     );
-};
+}
 
 export default Navbar;

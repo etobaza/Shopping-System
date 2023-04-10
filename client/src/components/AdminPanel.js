@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as userService from "../services/user";
+import Navbar from "./Navbar";
 
 const AdminPanel = () => {
     const [users, setUsers] = useState([]);
@@ -33,6 +34,7 @@ const AdminPanel = () => {
 
     return (
         <div>
+            <Navbar />
             <h1>Admin Panel</h1>
             <div>
                 <input

@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"path/filepath"
 	"shopping-system/config"
 	"shopping-system/middlewares"
 	"shopping-system/models"
@@ -96,9 +96,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	response := struct {
 		models.User
 		Token string `json:"token"`
+		ID    uint   `json:"id"`
 	}{
 		User:  user,
 		Token: token,
+		ID:    user.ID,
 	}
 	utils.Respond(w, response, http.StatusOK)
 
@@ -119,9 +121,8 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	utils.Respond(w, map[string]string{"message": "Logout successful"}, http.StatusOK)
 }
 
-func Home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-
+/*
+func Shop(w http.ResponseWriter, r *http.Request) {
 	isValid, err := middlewares.ValidateTokenFromRequest(r)
 	if !isValid {
 		utils.Error(w, err.Error(), http.StatusUnauthorized)
@@ -131,6 +132,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	buildDir := "./client/build/"
 	http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
 }
+*/
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.User
@@ -139,4 +141,27 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.Respond(w, users, http.StatusOK)
+}
+
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	// Get the user's information from the database
+	var user models.User
+	if errInf := config.DB.Where("id = ?", id).First(&user).Error; errInf != nil {
+		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
+		return
+	}
+
+	utils.Respond(w, user, http.StatusOK)
+}
+
+func GetItems(w http.ResponseWriter, r *http.Request) {
+	var items []models.Item
+	if err := config.DB.Find(&items).Error; err != nil {
+		utils.Error(w, "Failed to retrieve items", http.StatusInternalServerError)
+		return
+	}
+	utils.Respond(w, items, http.StatusOK)
 }

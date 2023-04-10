@@ -18,7 +18,7 @@ const Login = () => {
         const result = await userService.login(credentials);
         if (result.success) {
             console.log("User logged in:", result.data);
-            navigate("/home");
+            navigate("/shop");
         } else {
             console.error("Error logging in user:", result.message);
         }

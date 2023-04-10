@@ -37,21 +37,60 @@ const login = async (credentials) => {
         }
 
         const data = await response.json();
+
+        localStorage.setItem('userId', data.id);
+        localStorage.setItem('usertype', data.usertype);
         return { success: true, data };
     } catch (error) {
         return { success: false, message: "Incorrect username or password." };
     }
 };
 
+
+
 export const fetchUsers = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/users`);
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Error fetching users');
+        }
+
         const data = await response.json();
         return data;
     } catch (error) {
         console.error('Error fetching users:', error);
     }
 };
+
+
+export const fetchUser = async (id) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Error fetching user data');
+        }
+
+        const data = await response.json();
+        console.log('User data:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+    }
+};
+
+
 
 export const deleteUser = async (id) => {
     try {
@@ -67,24 +106,13 @@ export const deleteUser = async (id) => {
     }
 };
 
-
-export const fetchCategories = async () => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/categories`);
-        const data = await response.json();
-        return data;
-    }
-    catch (error) {
-        console.error('Error fetching categories:', error);
-    }
-};
-
 export const handleLogout = async () => {
     try {
         const response = await fetch('/logout', { method: 'POST' });
         if (!response.ok) {
             throw new Error('Failed to logout');
         }
+        localStorage.removeItem('userId');
         return true;
     } catch (error) {
         console.error(error);
@@ -98,6 +126,6 @@ export default {
     login,
     handleLogout,
     fetchUsers,
+    fetchUser,
     deleteUser,
-    fetchCategories,
 };

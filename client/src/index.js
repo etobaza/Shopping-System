@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import NoPage from "./components/NoPage";
-import Home from "./components/Home";
+import Shop from "./components/Shop";
 import AdminPanel from "./components/AdminPanel";
+import CategoryList from "./components/CategoryList";
 
 export default function App() {
     return (
@@ -12,8 +13,9 @@ export default function App() {
             <Routes>
                 <Route path="register" element={<Register />} />
                 <Route path="login" element={<Login />} />
-                <Route path="home" element={<Home />} />
-                <Route path="admin_panel" element={<AdminPanel />} />
+                <Route path="shop" element={<Shop />} />
+                <Route path="shop/c/:category" element={<CategoryList />} />
+                <Route path="admin-panel" element={<AdminPanel />} />
                 <Route path="*" element={<NoPage />} />
             </Routes>
         </BrowserRouter>

@@ -8,13 +8,21 @@ import (
 )
 
 func SetupRoutes(r *mux.Router) {
+
+	// All users routes
 	r.HandleFunc("/register", controllers.Register).Methods("POST")
 	r.HandleFunc("/login", controllers.Login).Methods("POST")
 	r.HandleFunc("/logout", controllers.Logout).Methods("POST")
-	r.HandleFunc("/home", controllers.Home).Methods("GET")
-	r.HandleFunc("/admin_panel", controllers.AdminPanel).Methods("GET")
+	//r.HandleFunc("/shop", controllers.Shop).Methods("GET")
 	r.HandleFunc("/users", controllers.GetUsers).Methods("GET")
+	r.HandleFunc("/users/{id}", controllers.GetUser).Methods("GET")
 	r.HandleFunc("/users/{id}", controllers.DeleteUser).Methods("DELETE")
+
+	// Admin routes
+	r.HandleFunc("/admin-panel", controllers.AdminPanel).Methods("GET")
+
+	// Misc routes
+	r.HandleFunc("/items", controllers.GetItems).Methods("GET")
 
 	buildDir := "./client/build/"
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(filepath.Join(buildDir, "static")))))
