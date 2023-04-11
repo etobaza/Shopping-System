@@ -6,6 +6,8 @@ import NoPage from "./components/NoPage";
 import Shop from "./components/Shop";
 import AdminPanel from "./components/AdminPanel";
 import CategoryList from "./components/CategoryList";
+import PostItem from "./components/PostItem";
+import Cart from "./components/Cart";
 
 export default function App() {
     return (
@@ -15,6 +17,8 @@ export default function App() {
                 <Route path="login" element={<Login />} />
                 <Route path="shop" element={<Shop />} />
                 <Route path="shop/c/:category" element={<CategoryList />} />
+                <Route path="shop/items/new" element={<PostItem />} />
+                <Route path="/cart" element={<Cart />} />
                 <Route path="admin-panel" element={<AdminPanel />} />
                 <Route path="*" element={<NoPage />} />
             </Routes>

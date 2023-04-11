@@ -37,16 +37,13 @@ const login = async (credentials) => {
         }
 
         const data = await response.json();
-
         localStorage.setItem('userId', data.id);
-        localStorage.setItem('usertype', data.usertype);
+        localStorage.setItem('userType', data.usertype);
         return { success: true, data };
     } catch (error) {
         return { success: false, message: "Incorrect username or password." };
     }
 };
-
-
 
 export const fetchUsers = async () => {
     try {
@@ -90,7 +87,27 @@ export const fetchUser = async (id) => {
     }
 };
 
+export const updateUser = async (id, userData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+        });
 
+        if (!response.ok) {
+            throw new Error('Error updating user');
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error) {
+        console.error('Error updating user:', error);
+        return { success: false, message: 'Update failed. Please try again.' };
+    }
+};
 
 export const deleteUser = async (id) => {
     try {
@@ -112,14 +129,12 @@ export const handleLogout = async () => {
         if (!response.ok) {
             throw new Error('Failed to logout');
         }
-        localStorage.removeItem('userId');
         return true;
     } catch (error) {
         console.error(error);
         return false;
     }
 };
-
 
 export default {
     register,

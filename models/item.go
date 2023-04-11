@@ -10,6 +10,7 @@ type Item struct {
 	Category    string    `gorm:"not null" json:"category"`
 	Description string    `gorm:"not null" json:"description"`
 	Price       uint      `gorm:"not null" json:"price"`
+	Rating      uint      `gorm:"not null" json:"rating"`
 	Quantity    uint      `gorm:"not null" json:"quantity"`
 	CreatedAt   time.Time `gorm:"not null" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"not null" json:"updated_at"`

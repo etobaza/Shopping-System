@@ -37,14 +37,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the password
-	hashedPassword, err := middlewares.HashPassword(reqData.Password)
+	hashedPassword, err := utils.HashPassword(reqData.Password)
 	if err != nil {
 		utils.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
 	// Create user
-	newUser := middlewares.ManufactureUser(reqData.Username, hashedPassword, reqData.Email, reqData.FirstName, reqData.LastName, reqData.Address, reqData.Phone, reqData.UserType)
+	newUser := utils.ManufactureUser(reqData.Username, hashedPassword, reqData.Email, reqData.FirstName, reqData.LastName, reqData.Address, reqData.Phone, reqData.UserType)
 
 	if addErr := config.DB.Create(&newUser).Error; addErr != nil {
 		utils.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -82,6 +82,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("User type: %v\n", user.UserType)
 
 	token, err := utils.GenerateToken(&user)
 	if err != nil {
@@ -95,12 +96,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	response := struct {
 		models.User
-		Token string `json:"token"`
-		ID    uint   `json:"id"`
+		Token    string `json:"token"`
+		ID       uint   `json:"id"`
+		UserType string `json:"usertype"`
 	}{
-		User:  user,
-		Token: token,
-		ID:    user.ID,
+		User:     user,
+		Token:    token,
+		ID:       user.ID,
+		UserType: user.UserType,
 	}
 	utils.Respond(w, response, http.StatusOK)
 
@@ -121,18 +124,9 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	utils.Respond(w, map[string]string{"message": "Logout successful"}, http.StatusOK)
 }
 
-/*
 func Shop(w http.ResponseWriter, r *http.Request) {
-	isValid, err := middlewares.ValidateTokenFromRequest(r)
-	if !isValid {
-		utils.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	buildDir := "./client/build/"
-	http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+	middlewares.ServePage(w, r)
 }
-*/
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	var users []models.User
@@ -157,6 +151,84 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	utils.Respond(w, user, http.StatusOK)
 }
 
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var user models.User
+	if err := config.DB.First(&user, id).Error; err != nil {
+		utils.Error(w, "Failed to retrieve user", http.StatusInternalServerError)
+		return
+	}
+
+	var reqData struct {
+		Balance float64 `json:"balance"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		utils.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	user.Balance = uint(reqData.Balance)
+
+	if err := config.DB.Save(&user).Error; err != nil {
+		utils.Error(w, "Failed to update user", http.StatusInternalServerError)
+		return
+	}
+
+	utils.Respond(w, user, http.StatusOK)
+}
+
+func UpdateItem(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var item models.Item
+	if err := config.DB.First(&item, id).Error; err != nil {
+		utils.Error(w, "Failed to retrieve item", http.StatusInternalServerError)
+		return
+	}
+
+	var reqData map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		utils.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	// validate the fields to be updated
+	allowedFields := map[string]bool{"name": true, "price": true, "quantity": true}
+	for field := range reqData {
+		if !allowedFields[field] {
+			utils.Error(w, "Invalid field: "+field, http.StatusBadRequest)
+			return
+		}
+	}
+
+	// update the fields
+	for field, value := range reqData {
+		switch field {
+		case "name":
+			item.Name = value.(string)
+		case "price":
+			item.Price = uint(value.(float64))
+		case "quantity":
+			newQuantity := uint(value.(float64))
+			if newQuantity < 0 {
+				utils.Error(w, "Invalid quantity: "+string(newQuantity), http.StatusBadRequest)
+				return
+			}
+			item.Quantity = newQuantity
+		}
+	}
+
+	if err := config.DB.Save(&item).Error; err != nil {
+		utils.Error(w, "Failed to update item", http.StatusInternalServerError)
+		return
+	}
+
+	utils.Respond(w, item, http.StatusOK)
+}
+
 func GetItems(w http.ResponseWriter, r *http.Request) {
 	var items []models.Item
 	if err := config.DB.Find(&items).Error; err != nil {
@@ -164,4 +236,90 @@ func GetItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.Respond(w, items, http.StatusOK)
+}
+
+func GetItemsSeller(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+
+	var items []models.Item
+	if err := config.DB.Where("user_id = ?", userID).Find(&items).Error; err != nil {
+		utils.Error(w, "Failed to retrieve items", http.StatusInternalServerError)
+		return
+	}
+	utils.Respond(w, items, http.StatusOK)
+}
+
+func CreateItem(w http.ResponseWriter, r *http.Request) {
+	var reqData models.Item
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		log.Printf("Error decoding request data: %v\n", err)
+		utils.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	tokenString := utils.ExtractToken(r)
+	if tokenString == "" {
+		utils.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := utils.ParseToken(tokenString)
+	if err != nil {
+		log.Printf("Error parsing token: %v\n", err)
+		utils.Error(w, "Failed to parse token", http.StatusInternalServerError)
+		return
+	}
+
+	userID := uint(claims["user_id"].(float64))
+
+	// Set the user ID of the item to the current user's ID
+	reqData.UserID = userID
+
+	if err := config.DB.Create(&reqData).Error; err != nil {
+		log.Printf("Error creating item: %v\n", err)
+		utils.Error(w, "Failed to create item", http.StatusInternalServerError)
+		return
+	}
+
+	utils.Respond(w, reqData, http.StatusCreated)
+}
+
+func DeleteItem(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	// Get the item's information from the database
+	var item models.Item
+	if errInf := config.DB.Where("id = ?", id).First(&item).Error; errInf != nil {
+		utils.Error(w, "Failed to retrieve item", http.StatusInternalServerError)
+		return
+	}
+
+	tokenString := utils.ExtractToken(r)
+	if tokenString == "" {
+		utils.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := utils.ParseToken(tokenString)
+	if err != nil {
+		log.Printf("Error parsing token: %v\n", err)
+		utils.Error(w, "Failed to parse token", http.StatusInternalServerError)
+		return
+	}
+
+	userID := uint(claims["user_id"].(float64))
+
+	if item.UserID != userID {
+		utils.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := config.DB.Delete(&item).Error; err != nil {
+		log.Printf("Error deleting item: %v\n", err)
+		utils.Error(w, "Failed to delete item", http.StatusInternalServerError)
+		return
+	}
+
+	utils.Respond(w, map[string]string{"message": "Item deleted"}, http.StatusOK)
 }

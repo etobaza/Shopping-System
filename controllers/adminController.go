@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"path/filepath"
 	"shopping-system/config"
 	"shopping-system/middlewares"
 	"shopping-system/models"
@@ -12,12 +11,19 @@ import (
 )
 
 func AdminPanel(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	tokenString := utils.ExtractToken(r)
-	claims, _ := utils.ParseToken(tokenString)
+	if tokenString == "" {
+		utils.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	claims, err := utils.ParseToken(tokenString)
+	if err != nil {
+		utils.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
 	userID := uint(claims["user_id"].(float64))
 
-	hasRole, err := middlewares.HasRole(userID, "admin")
+	hasRole, err := utils.HasRole(userID, "admin")
 	if err != nil {
 		utils.Error(w, "Error checking user role", http.StatusInternalServerError)
 		return
@@ -26,9 +32,7 @@ func AdminPanel(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-
-	buildDir := "./client/build/"
-	http.ServeFile(w, r, filepath.Join(buildDir, "index.html"))
+	middlewares.ServePage(w, r)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +40,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	claims, _ := utils.ParseToken(tokenString)
 	userID := uint(claims["user_id"].(float64))
 
-	hasRole, err := middlewares.HasRole(userID, "admin")
+	hasRole, err := utils.HasRole(userID, "admin")
 	if err != nil {
 		fmt.Println("Error checking user role:", err)
 		utils.Error(w, "Error checking user role", http.StatusInternalServerError)

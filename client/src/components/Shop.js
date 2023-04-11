@@ -1,31 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
-import { fetchItems, parseCategories } from '../services/item';
-import { Link } from 'react-router-dom';
+import { fetchItems, fetchItemsSeller, parseCategories } from '../services/item';
+import SellerShop from './SellerShop';
+import CustomerShop from './CustomerShop';
 
 const Shop = () => {
     const [categories, setCategories] = useState([]);
+    const userType = localStorage.getItem('userType');
 
     useEffect(() => {
-        fetchItems().then(items => {
-            const categories = parseCategories(items);
-            setCategories(categories);
-        });
-    }, []);
+        if (userType === 'seller') {
+            fetchItemsSeller().then((items) => {
+                const categories = parseCategories(items);
+                setCategories(categories);
+            });
+        } else {
+            fetchItems().then((items) => {
+                const categories = parseCategories(items);
+                setCategories(categories);
+            });
+        }
+    }, [userType]);
 
     return (
         <div>
             <Navbar />
-            <div className="categories">
-                <h2>Product Categories</h2>
-                <ul>
-                    {categories.map((category, index) => (
-                        <li key={index}>
-                            <Link to={`/shop/c/${category}`}>{category}</Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            {userType === 'seller' ? (
+                <SellerShop categories={categories} />
+            ) : (
+                <CustomerShop categories={categories} />
+            )}
         </div>
     );
 };
